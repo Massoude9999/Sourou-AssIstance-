@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Équipe Alpha</title>
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Alpha">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon.svg">
+<style>
+  :root {
+    --bg: #f6f7fb; --panel: #ffffff; --text: #1f2330; --muted: #6b7280;
+    --border: #e4e6ee; --accent: #4f46e5; --accent-text: #fff; --user: #4f46e5;
+    --danger: #dc2626; --code: #f1f2f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1117; --panel: #171a23; --text: #e7e9f0; --muted: #9aa0ae;
+      --border: #2a2e3b; --accent: #6366f1; --user: #4f46e5; --code: #232735;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; height: 100dvh;
+  }
+  button { font: inherit; cursor: pointer; }
+  header {
+    display: flex; align-items: center; gap: 8px;
+    padding: calc(env(safe-area-inset-top) + 8px) 12px 8px;
+    background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  header h1 { flex: 1; font-size: 17px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icon-btn { background: none; border: 0; color: var(--text); font-size: 22px; padding: 4px 8px; border-radius: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: #22c55e; } .dot.ko { background: var(--danger); }
+
+  main { flex: 1; overflow-y: auto; padding: 12px 16px 24px; -webkit-overflow-scrolling: touch; }
+  .empty { color: var(--muted); text-align: center; margin-top: 15vh; padding: 0 16px; }
+  .empty h2 { color: var(--text); font-size: 20px; }
+  .phase { text-align: center; color: var(--muted); font-size: 13px; font-weight: 600; margin: 18px 0 8px; letter-spacing: .02em; }
+  .msg { margin: 10px 0; max-width: 100%; }
+  .msg.user { display: flex; justify-content: flex-end; }
+  .msg.user .bubble { background: var(--user); color: #fff; border-radius: 18px 18px 4px 18px; max-width: 85%; white-space: pre-wrap; }
+  .msg.agent .bubble { background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--agent, var(--accent)); border-radius: 4px 14px 14px 14px; }
+  .bubble { padding: 10px 14px; overflow-wrap: anywhere; }
+  .who { font-size: 13px; font-weight: 700; color: var(--agent, var(--accent)); margin-bottom: 2px; }
+  .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
+  .bubble ul, .bubble ol { margin: 4px 0 8px; padding-left: 22px; }
+  .bubble h3, .bubble h4 { margin: 10px 0 4px; font-size: 16px; }
+  .bubble code { background: var(--code); padding: 1px 5px; border-radius: 5px; font-size: 14px; }
+  .bubble pre { background: var(--code); padding: 10px; border-radius: 8px; overflow-x: auto; }
+  .bubble pre code { background: none; padding: 0; }
+  .typing::after { content: "▍"; animation: blink 1s steps(1) infinite; color: var(--muted); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .notice { text-align: center; color: var(--muted); font-size: 14px; margin: 10px 0; }
+  .notice.error { color: var(--danger); }
+
+  footer {
+    background: var(--panel); border-top: 1px solid var(--border);
+    padding: 8px 12px calc(env(safe-area-inset-bottom) + 8px);
+  }
+  .modes { display: flex; gap: 6px; margin-bottom: 8px; }
+  .modes button {
+    flex: 1; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    border-radius: 999px; padding: 6px 8px; font-size: 14px;
+  }
+  .modes button.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .composer { display: flex; gap: 8px; align-items: flex-end; }
+  textarea {
+    flex: 1; resize: none; max-height: 40vh; min-height: 44px; font: inherit; font-size: 16px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px;
+    background: var(--bg); color: var(--text);
+  }
+  .send { background: var(--accent); color: #fff; border: 0; border-radius: 14px; height: 44px; min-width: 52px; font-size: 18px; }
+  .send:disabled { opacity: .5; }
+
+  /* Tiroir des conversations */
+  .drawer-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 10; }
+  .drawer {
+    position: fixed; top: 0; bottom: 0; left: 0; width: min(85vw, 340px); z-index: 11;
+    background: var(--panel); transform: translateX(-100%); transition: transform .2s;
+    display: flex; flex-direction: column; padding-top: env(safe-area-inset-top);
+  }
+  .drawer.open { transform: none; } .drawer.open + .drawer-bg { display: block; }
+  .drawer .top { padding: 12px; display: grid; gap: 8px; border-bottom: 1px solid var(--border); }
+  .btn { border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px; padding: 10px; text-align: left; }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .convs { flex: 1; overflow-y: auto; padding: 8px; }
+  .conv { display: flex; align-items: center; border-radius: 10px; }
+  .conv.active { background: var(--bg); }
+  .conv button.open { flex: 1; text-align: left; background: none; border: 0; color: var(--text); padding: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .conv button.del { background: none; border: 0; color: var(--muted); padding: 10px; }
+  .drawer .bottom { padding: 12px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); padding-bottom: calc(env(safe-area-inset-bottom) + 12px); }
+
+  /* Fenêtres (jeton, carnet, équipe) */
+  dialog { border: 0; border-radius: 16px; padding: 0; width: min(92vw, 520px); background: var(--panel); color: var(--text); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog form { padding: 16px; display: grid; gap: 12px; }
+  dialog h2 { margin: 0; font-size: 18px; }
+  dialog input, dialog textarea { width: 100%; font: inherit; font-size: 16px; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  dialog textarea { min-height: 45vh; max-height: 60vh; }
+  .row { display: flex; gap: 8px; justify-content: flex-end; }
+  .team { max-height: 60vh; overflow-y: auto; display: grid; gap: 8px; }
+  .team div { border-left: 4px solid var(--agent); padding: 4px 10px; }
+  .team small { color: var(--muted); display: block; }
+</style>
+</head>
+<body>
+<header>
+  <button class="icon-btn" id="menuBtn" aria-label="Menu">☰</button>
+  <h1 id="title">Équipe Alpha</h1>
+  <span class="dot" id="status" title="État d'Ollama"></span>
+</header>
+
+<main id="chat"></main>
+
+<footer>
+  <div class="modes" role="group" aria-label="Mode">
+    <button type="button" data-mode="reunion" class="on">🧠 Réunion d'équipe</button>
+    <button type="button" data-mode="direct">💬 Réponse rapide</button>
+  </div>
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Ton objectif ou ta question…"></textarea>
+    <button class="send" id="sendBtn" aria-label="Envoyer">➤</button>
+  </div>
+</footer>
+
+<nav class="drawer" id="drawer">
+  <div class="top">
+    <button class="btn primary" id="newBtn">＋ Nouvelle réunion</button>
+    <button class="btn" id="notesBtn">📓 Carnet de bord</button>
+    <button class="btn" id="teamBtn">👥 L'équipe</button>
+  </div>
+  <div class="convs" id="convs"></div>
+  <div class="bottom" id="info"></div>
+</nav>
+<div class="drawer-bg" id="drawerBg"></div>
+
+<dialog id="tokenDlg">
+  <form method="dialog" id="tokenForm">
+    <h2>🔐 Connexion</h2>
+    <p style="margin:0;color:var(--muted)">Colle le jeton affiché au démarrage du serveur sur le Mac mini (fichier <code>data/token.txt</code>).</p>
+    <input id="tokenInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Jeton d'accès" required>
+    <div class="row"><button class="btn primary" value="ok">Se connecter</button></div>
+  </form>
+</dialog>
+
+<dialog id="notesDlg">
+  <form method="dialog">
+    <h2>📓 Carnet de bord</h2>
+    <p style="margin:0;color:var(--muted);font-size:14px">Mémoire permanente lue par toute l'équipe à chaque réunion : objectifs, projets, décisions, contraintes.</p>
+    <textarea id="notesInput" placeholder="Ex. : Objectif : 1 000 €/mois de revenus complémentaires d'ici 6 mois. Budget : 200 €. Disponible 8 h/semaine…"></textarea>
+    <div class="row">
+      <button class="btn" value="cancel">Annuler</button>
+      <button class="btn primary" value="save">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="teamDlg">
+  <form method="dialog">
+    <h2>👥 L'Équipe Alpha</h2>
+    <div class="team" id="teamList"></div>
+    <div class="row"><button class="btn primary" value="ok">Fermer</button></div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const state = {
+  token: localStorage.getItem("alphaToken") || "",
+  agents: {},          // id -> {name, emoji, color}
+  convId: localStorage.getItem("alphaConv") || null,
+  mode: localStorage.getItem("alphaMode") || "reunion",
+  run: null,           // {id, seq, done, bubbles: {agentId: el}}
+};
+
+// ---------- API ----------
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + state.token, ...(opts.headers || {}) },
+  });
+  if (res.status === 401) { askToken(); throw new Error("Jeton invalide"); }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return res;
+}
+const getJSON = async (p) => (await api(p)).json();
+
+// ---------- Rendu Markdown minimal (le texte est échappé d'abord) ----------
+function esc(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function inline(s) {
+  return s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+}
+function md(src) {
+  const out = []; let list = null; let para = [];
+  const flushPara = () => { if (para.length) { out.push("<p>" + inline(para.join("<br>")) + "</p>"); para = []; } };
+  const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  const parts = esc(src).split(/```/);
+  parts.forEach((part, i) => {
+    if (i % 2 === 1) { flushPara(); closeList(); out.push("<pre><code>" + part.replace(/^\w*\n/, "") + "</code></pre>"); return; }
+    for (const line of part.split("\n")) {
+      let m;
+      if (!line.trim()) { flushPara(); closeList(); continue; }
+      if ((m = line.match(/^#{1,6}\s+(.*)/))) { flushPara(); closeList(); out.push("<h3>" + inline(m[1]) + "</h3>"); continue; }
+      if ((m = line.match(/^\s*[-*•]\s+(.*)/)) || (m = line.match(/^\s*\d+[.)]\s+(.*)/))) {
+        const kind = /^\s*\d/.test(line) ? "ol" : "ul";
+        flushPara(); if (list !== kind) { closeList(); out.push(`<${kind}>`); list = kind; }
+        out.push("<li>" + inline(m[1]) + "</li>"); continue;
+      }
+      closeList(); para.push(line);
+    }
+  });
+  flushPara(); closeList();
+  return out.join("");
+}
+
+// ---------- Affichage ----------
+const chat = $("#chat");
+const nearBottom = () => chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
+const scrollDown = (force) => { if (force || nearBottom()) chat.scrollTop = chat.scrollHeight; };
+
+function agentInfo(id) {
+  return state.agents[id] || { name: id || "Équipe", emoji: "🤖", color: "#6366f1" };
+}
+function addPhase(label) {
+  const el = document.createElement("div"); el.className = "phase"; el.textContent = label;
+  chat.append(el); scrollDown();
+}
+function addUser(text) {
+  const el = document.createElement("div"); el.className = "msg user";
+  const b = document.createElement("div"); b.className = "bubble"; b.textContent = text;
+  el.append(b); chat.append(el); scrollDown(true);
+}
+function addAgent(id, text = "", typing = false) {
+  const a = agentInfo(id);
+  const el = document.createElement("div"); el.className = "msg agent";
+  el.style.setProperty("--agent", a.color);
+  const b = document.createElement("div"); b.className = "bubble";
+  const who = document.createElement("div"); who.className = "who"; who.textContent = `${a.emoji} ${a.name}`;
+  const body = document.createElement("div"); body.className = "body" + (typing ? " typing" : "");
+  body.dataset.raw = text; body.innerHTML = md(text);
+  b.append(who, body); el.append(b); chat.append(el); scrollDown();
+  return body;
+}
+function addNotice(text, error = false) {
+  const el = document.createElement("div"); el.className = "notice" + (error ? " error" : ""); el.textContent = text;
+  chat.append(el); scrollDown(true);
+  return el;
+}
+const PHASE_LABELS = { cadrage: "🎯 Cadrage", tour_de_table: "🧠 Tour de table", debat: "⚔️ Débat", synthese: "✅ Synthèse et décision", direct: "💬 Réponse directe" };
+function showEmpty() {
+  chat.innerHTML = `<div class="empty"><h2>Équipe Alpha activée.</h2>
+    <p>Dis-moi ton objectif, et je lance la réunion.</p>
+    <p style="font-size:14px">🧠 <b>Réunion</b> : les experts débattent puis l'orchestrateur tranche.<br>💬 <b>Rapide</b> : l'orchestrateur répond seul.</p></div>`;
+}
+function renderMessages(msgs) {
+  chat.innerHTML = "";
+  if (!msgs.length) return showEmpty();
+  let lastPhase = null;
+  for (const m of msgs) {
+    if (m.role === "user") { addUser(m.content); lastPhase = null; continue; }
+    if (m.phase !== lastPhase) { addPhase(PHASE_LABELS[m.phase] || m.phase); lastPhase = m.phase; }
+    addAgent(m.agent_id, m.content);
+  }
+  scrollDown(true);
+}
+
+// ---------- Suivi d'une réunion en direct (reprise automatique) ----------
+let renderPending = new Set();
+function scheduleRender(body) {
+  if (renderPending.has(body)) return;
+  renderPending.add(body);
+  requestAnimationFrame(() => { renderPending.delete(body); body.innerHTML = md(body.dataset.raw); scrollDown(); });
+}
+function handleEvent(run, ev) {
+  run.seq = ev.seq + 1;
+  switch (ev.type) {
+    case "queued": run.notice = addNotice("⏳ Une autre réunion est en cours sur le Mac, ton tour arrive…"); break;
+    case "phase": if (run.notice) { run.notice.remove(); run.notice = null; } addPhase(ev.label); break;
+    case "agent_start": run.current = addAgent(ev.agent, "", true); break;
+    case "token":
+      if (!run.current) run.current = addAgent(ev.agent, "", true);
+      run.current.dataset.raw += ev.text; scheduleRender(run.current); break;
+    case "agent_end":
+      if (run.current) { run.current.dataset.raw = ev.content; run.current.innerHTML = md(ev.content); run.current.classList.remove("typing"); run.current = null; }
+      break;
+    case "error": addNotice("⚠️ " + ev.message, true); break;
+    case "done": break;
+  }
+}
+async function follow(run) {
+  setBusy(true);
+  let attempts = 0;
+  while (!run.done && state.run === run) {
+    try {
+      const res = await api(`/api/runs/${run.id}/stream?since=${run.seq}`);
+      const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+      attempts = 0;
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i); buf = buf.slice(i + 1);
+          if (!line.trim()) continue;
+          const ev = JSON.parse(line);
+          if (state.run !== run) return;
+          handleEvent(run, ev);
+          if (ev.type === "done" || ev.type === "error") run.done = true;
+        }
+      }
+    } catch (err) {
+      if (state.run !== run) return;
+      if (/introuvable/.test(err.message)) { run.done = true; await openConversation(state.convId); return; }
+      if (++attempts > 20) { addNotice("Connexion perdue : " + err.message, true); break; }
+      await new Promise((r) => setTimeout(r, Math.min(1000 * attempts, 5000)));
+    }
+  }
+  if (run.current) run.current.classList.remove("typing");
+  if (state.run === run) { state.run = null; setBusy(false); loadConversations(); }
+}
+// Au retour sur l'app (téléphone sorti de veille), on reprend le flux.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !state.convId || state.run) return;
+  getJSON(`/api/conversations/${state.convId}`)
+    .then((c) => { if (c.active_run) openConversation(c.id, true); })
+    .catch(() => {});
+});
+
+// ---------- Conversations ----------
+async function loadConversations() {
+  const convs = await getJSON("/api/conversations");
+  const box = $("#convs"); box.innerHTML = "";
+  for (const c of convs) {
+    const row = document.createElement("div"); row.className = "conv" + (c.id === state.convId ? " active" : "");
+    const open = document.createElement("button"); open.className = "open"; open.textContent = c.title;
+    open.onclick = () => { closeDrawer(); openConversation(c.id); };
+    const del = document.createElement("button"); del.className = "del"; del.textContent = "🗑"; del.ariaLabel = "Supprimer";
+    del.onclick = async () => {
+      if (!confirm(`Supprimer « ${c.title} » ?`)) return;
+      try { await api(`/api/conversations/${c.id}`, { method: "DELETE" }); } catch (e) { return alert(e.message); }
+      if (c.id === state.convId) { setConv(null); showEmpty(); }
+      loadConversations();
+    };
+    row.append(open, del); box.append(row);
+  }
+  return convs;
+}
+function setConv(id, title) {
+  state.convId = id;
+  id ? localStorage.setItem("alphaConv", id) : localStorage.removeItem("alphaConv");
+  $("#title").textContent = title || "Équipe Alpha";
+}
+async function openConversation(id, quiet = false) {
+  let conv;
+  try { conv = await getJSON(`/api/conversations/${id}`); }
+  catch (e) { setConv(null); showEmpty(); if (!quiet) console.warn(e); return; }
+  state.run = null;
+  setConv(conv.id, conv.title);
+  if (conv.active_run) {
+    // On affiche l'historique jusqu'à la dernière question, puis on rejoue la réunion en cours.
+    const lastUser = conv.messages.map((m) => m.role).lastIndexOf("user");
+    renderMessages(conv.messages.slice(0, lastUser + 1));
+    const run = { id: conv.active_run, seq: 0, done: false };
+    state.run = run; follow(run);
+  } else {
+    renderMessages(conv.messages); setBusy(false);
+  }
+  loadConversations();
+}
+async function send() {
+  const input = $("#input"); const text = input.value.trim();
+  if (!text || state.run) return;
+  try {
+    if (!state.convId) {
+      const conv = await (await api("/api/conversations", { method: "POST", body: "{}" })).json();
+      setConv(conv.id, text.slice(0, 60)); chat.innerHTML = "";
+    }
+    if (chat.querySelector(".empty")) chat.innerHTML = "";
+    const { run_id } = await (await api(`/api/conversations/${state.convId}/messages`, {
+      method: "POST", body: JSON.stringify({ text, mode: state.mode }),
+    })).json();
+    input.value = ""; autosize();
+    addUser(text);
+    const run = { id: run_id, seq: 0, done: false };
+    state.run = run; follow(run);
+  } catch (e) { addNotice("⚠️ " + e.message, true); }
+}
+function setBusy(busy) { $("#sendBtn").disabled = busy; $("#sendBtn").textContent = busy ? "…" : "➤"; }
+
+// ---------- Interface ----------
+function autosize() { const t = $("#input"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, innerHeight * 0.4) + "px"; }
+$("#input").addEventListener("input", autosize);
+$("#input").addEventListener("keydown", (e) => {
+  // Entrée envoie sur ordinateur ; sur téléphone, le bouton ➤ envoie.
+  if (e.key === "Enter" && !e.shiftKey && matchMedia("(pointer: fine)").matches) { e.preventDefault(); send(); }
+});
+$("#sendBtn").onclick = send;
+document.querySelectorAll(".modes button").forEach((b) => {
+  b.classList.toggle("on", b.dataset.mode === state.mode);
+  b.onclick = () => {
+    state.mode = b.dataset.mode; localStorage.setItem("alphaMode", state.mode);
+    document.querySelectorAll(".modes button").forEach((x) => x.classList.toggle("on", x === b));
+  };
+});
+const drawer = $("#drawer");
+const closeDrawer = () => drawer.classList.remove("open");
+$("#menuBtn").onclick = () => { drawer.classList.add("open"); loadConversations(); };
+$("#drawerBg").onclick = closeDrawer;
+$("#newBtn").onclick = () => { closeDrawer(); state.run = null; setBusy(false); setConv(null); showEmpty(); $("#input").focus(); };
+$("#teamBtn").onclick = () => {
+  closeDrawer();
+  $("#teamList").innerHTML = "";
+  for (const a of Object.values(state.agents)) {
+    const d = document.createElement("div"); d.style.setProperty("--agent", a.color);
+    d.innerHTML = `<b></b><small></small>`;
+    d.querySelector("b").textContent = `${a.emoji} ${a.name}`;
+    d.querySelector("small").textContent = `${a.role} — modèle : ${a.model || state.defaultModel}`;
+    $("#teamList").append(d);
+  }
+  $("#teamDlg").showModal();
+};
+$("#notesBtn").onclick = async () => {
+  closeDrawer();
+  try { $("#notesInput").value = (await getJSON("/api/notes")).content; } catch (e) { return alert(e.message); }
+  $("#notesDlg").showModal();
+};
+$("#notesDlg").addEventListener("close", async () => {
+  if ($("#notesDlg").returnValue !== "save") return;
+  try { await api("/api/notes", { method: "PUT", body: JSON.stringify({ content: $("#notesInput").value }) }); }
+  catch (e) { alert(e.message); }
+});
+
+function askToken() { if (!$("#tokenDlg").open) $("#tokenDlg").showModal(); }
+$("#tokenForm").addEventListener("submit", () => {
+  state.token = $("#tokenInput").value.trim();
+  localStorage.setItem("alphaToken", state.token);
+  setTimeout(boot, 0);
+});
+
+async function checkHealth() {
+  try {
+    const h = await (await fetch("/api/health")).json();
+    const dot = $("#status");
+    dot.className = "dot " + (h.ollama.ok ? "ok" : "ko");
+    dot.title = h.ollama.ok ? "Ollama connecté" : "Ollama injoignable : " + h.ollama.error;
+    const has = h.ollama.models.some((m) => m === h.default_model || m.startsWith(h.default_model + ":"));
+    $("#info").textContent = h.ollama.ok
+      ? `Modèle : ${h.default_model}${has || !h.ollama.models.length ? "" : " ⚠️ non téléchargé (ollama pull " + h.default_model + ")"}`
+      : "⚠️ Ollama ne répond pas sur le Mac mini.";
+  } catch { $("#status").className = "dot ko"; }
+}
+
+async function boot() {
+  checkHealth();
+  if (!state.token) return askToken();
+  try {
+    const team = await getJSON("/api/agents");
+    state.defaultModel = team.default_model;
+    state.agents = {};
+    for (const a of [team.coordinator, ...team.experts]) state.agents[a.id] = a;
+  } catch { return; }
+  if (state.convId) openConversation(state.convId); else showEmpty();
+  loadConversations();
+}
+setInterval(checkHealth, 30000);
+boot();
+</script>
+</body>
+</html>

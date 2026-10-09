@@ -1,0 +1,11 @@
+{
+  "name": "Équipe Alpha",
+  "short_name": "Alpha",
+  "description": "Ton équipe d'IA locales, sur ton Mac mini.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#4f46e5",
+  "lang": "fr",
+  "icons": [{ "src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -65,9 +65,10 @@ class ThinkFilter:
 
 class OllamaClient:
     def __init__(self, base_url: str, num_ctx: int = 8192, think: bool | None = None,
-                 timeout: float = 600.0) -> None:
+                 timeout: float = 600.0, keep_alive: str = "30m") -> None:
         self.base_url = base_url.rstrip("/")
         self.num_ctx = num_ctx
+        self.keep_alive = keep_alive
         self.think = think
         self.timeout = timeout
 
@@ -77,6 +78,7 @@ class OllamaClient:
             "model": model,
             "messages": messages,
             "stream": True,
+            "keep_alive": self.keep_alive,
             "options": {"num_ctx": self.num_ctx, "temperature": temperature},
         }
         if self.think is not None:

@@ -71,6 +71,17 @@ ou utilise le mode « Réponse rapide ».
 Tu peux essayer d'autres modèles d'Ollama (`llama3.1:8b`, `mistral-small`, `qwen3`…) :
 `ollama pull <modèle>`, puis modifie `default_model` dans `config.yaml`.
 
+### Réglages conseillés pour un Mac mini 16 Go
+
+La configuration par défaut est déjà prévue pour 16 Go :
+- **`qwen2.5:7b`** occupe environ 5 Go et laisse de la marge à macOS. Il est bon en français.
+- **Un seul modèle partagé** par toute l'équipe. N'attribue pas un modèle différent à
+  chaque expert : avec 16 Go, ils se déchargeraient et se rechargeraient sans arrêt.
+- **`keep_alive: "30m"`** garde le modèle chargé entre les interventions.
+- Pour des réunions plus courtes : `max_experts: 2` ou `debate_rounds: 0`.
+- **À éviter** : les modèles 14b et plus (lents et proches de la limite de mémoire), et
+  laisser beaucoup d'applications lourdes ouvertes pendant une réunion.
+
 ## Personnaliser l'équipe
 
 Tout se règle dans [`config.yaml`](config.yaml) :

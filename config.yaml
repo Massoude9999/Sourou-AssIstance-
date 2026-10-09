@@ -5,7 +5,12 @@
 ollama_url: "http://127.0.0.1:11434"
 
 # Modèle par défaut : choisis-le selon la RAM de ton Mac mini (voir README).
+# Mac mini 16 Go : qwen2.5:7b (~5 Go en mémoire), le meilleur compromis qualité/vitesse.
 default_model: "qwen2.5:7b"
+
+# Durée pendant laquelle le modèle reste chargé en mémoire après une réponse.
+# Évite de le recharger (5-10 s) à chaque intervention ou réunion. "-1" = toujours.
+keep_alive: "30m"
 
 # Taille du contexte envoyé au modèle (tokens). 8192 suffit pour une réunion.
 num_ctx: 8192

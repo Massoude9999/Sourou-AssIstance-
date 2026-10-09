@@ -41,6 +41,7 @@ class Settings:
     ollama_url: str = "http://127.0.0.1:11434"
     default_model: str = "qwen2.5:7b"
     num_ctx: int = 8192
+    keep_alive: str = "30m"
     temperature: float = 0.6
     think: bool | None = None
     max_experts: int = 3
@@ -110,6 +111,7 @@ def load_settings(path: str | Path | None = None) -> Settings:
         ollama_url=os.environ.get("OLLAMA_URL") or raw.get("ollama_url", "http://127.0.0.1:11434"),
         default_model=os.environ.get("ALPHA_MODEL") or raw.get("default_model", "qwen2.5:7b"),
         num_ctx=int(raw.get("num_ctx", 8192)),
+        keep_alive=str(raw.get("keep_alive", "30m")),
         temperature=float(raw.get("temperature", 0.6)),
         think=raw.get("think"),
         max_experts=int(raw.get("max_experts", 3)),

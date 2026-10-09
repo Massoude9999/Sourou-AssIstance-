@@ -37,7 +37,8 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
     settings = settings or load_settings()
     if llm is None:
         llm = (FakeClient(delay=0.03) if os.environ.get("ALPHA_FAKE_LLM")
-               else OllamaClient(settings.ollama_url, settings.num_ctx, settings.think))
+               else OllamaClient(settings.ollama_url, settings.num_ctx, settings.think,
+                              keep_alive=settings.keep_alive))
     storage = Storage(settings.data_dir / "alpha.db")
     runs = RunManager(settings, llm, storage)
 
